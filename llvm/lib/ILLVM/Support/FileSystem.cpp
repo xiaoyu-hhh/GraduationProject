@@ -108,8 +108,8 @@ FileSystem::readFirstNLines(const std::string &filepath, const size_t n) {
   return result;
 }
 
-llvm::Error FileSystem::mkdir(const std::string &dirpath) {
-  const std::error_code ec = llvm::sys::fs::create_directory(dirpath, false);
+llvm::Error FileSystem::mkdir(const std::string &dirpath,bool ignoreIfExisting) {
+  const std::error_code ec = llvm::sys::fs::create_directory(dirpath, ignoreIfExisting);
   ILLVM_ECHECK(!ec, "Can not create directory " + dirpath +
                         " error: " + ec.message());
   return llvm::Error::success();
@@ -183,7 +183,7 @@ static void mvDirDFS(const std::string &baseFromDirPath,
       FileSystem::linkPath(baseFromDirPath, relDirPath);
   const std::string toDirPath = FileSystem::linkPath(baseToDirPath, relDirPath);
 
-  ILLVM_FATAL_ON(FileSystem::mkdir(toDirPath), "");
+  ILLVM_FATAL_ON(FileSystem::mkdir(toDirPath,false), "");
 
   std::error_code ec;
 

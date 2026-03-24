@@ -52,8 +52,9 @@
 #include <optional>
 
 // FSClang begin
+#include "fsclang/ASTSupport/ASTGlobal.h"
 #include "fsclang/Global/Global.h"
-// FSCLang end
+// FSClang end
 
 using namespace clang;
 using namespace llvm;
@@ -324,6 +325,16 @@ namespace clang {
       if (!getModule())
         return;
 
+      // FSClang begin
+      for (auto &F : getModule()->functions()) {
+        auto &global = fsclang::Global::getInstance();
+        if (global.Mode == fsclang::FSClangMode::Master) {
+          global.addMangledName(F.getName().str(),
+                                fsclang::MangledNameParts::CodeGen);
+        }
+      }
+      // FSClang end
+
       LLVMContext &Ctx = getModule()->getContext();
       std::unique_ptr<DiagnosticHandler> OldDiagnosticHandler =
           Ctx.getDiagnosticHandler();
@@ -370,18 +381,6 @@ namespace clang {
         }
       }
 
-      // FSClang begin
-      auto &global = fsclang::Global::getInstance();
-      for (auto S : global.Method) {
-        llvm::errs() << S << "\n";
-      }
-      for (auto S : global.Function) {
-        llvm::errs() << S << "\n";
-      }
-      for (auto S : global.Instantiation) {
-        llvm::errs() << S << "\n";
-      }
-      // FSClang end
       if (CodeGenOpts.ClearASTBeforeBackend) {
         LLVM_DEBUG(llvm::dbgs() << "Clearing AST...\n");
         // Access to the AST is no longer available after this.

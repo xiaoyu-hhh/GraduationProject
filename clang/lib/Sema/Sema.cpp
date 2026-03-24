@@ -1088,6 +1088,31 @@ void Sema::ActOnEndOfTranslationUnitFragment(TUFragmentKind Kind) {
 
   {
     llvm::TimeTraceScope TimeScope("PerformPendingInstantiations");
+
+    // auto &global = fsclang::Global::getInstance();
+    // if (global.Mode == fsclang::FSClangMode::Client) {
+    //   auto &astGlobal = fsclang::ASTGlobal::getInstance();
+    //   // PendingLocalImplicitInstantiations
+    //   auto temp_PendingLocalImplicitInstantiations = PendingLocalImplicitInstantiations;
+    //   PendingLocalImplicitInstantiations.clear();
+    //   while (!temp_PendingLocalImplicitInstantiations.empty()) {
+    //     auto elem = PendingInstantiations.front();
+    //     PendingInstantiations.pop_front();
+    //     if (FunctionDecl *Function = dyn_cast<FunctionDecl>(elem.first)) {
+    //       if (Function->isMultiVersion()) {
+    //         for (e)
+    //       }
+    //       else
+    //     }
+    //   }
+    //
+    //   // PendingInstantiations
+    //   auto temp_PendingInstantiations = PendingInstantiations;
+    //   PendingInstantiations.clear();
+    //
+    //
+    // }
+
     PerformPendingInstantiations();
   }
 

@@ -1,11 +1,11 @@
 set(LLVM_LINK_COMPONENTS
   Option
   ProfileData
-  LLVMILLVMSupport
+  ILLVMSupport
   )
 
 add_clang_library(clangFSClangGlobal
-        Global.cpp
+  Global.cpp
 
   DEPENDS
   ClangDriverOptions

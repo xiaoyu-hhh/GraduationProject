@@ -47,8 +47,8 @@ public:
   static std::vector<std::string>
   readFirstNLines(const std::string &filepath, const size_t n);
 
-  // Return error when the dirpath exists.
-  static llvm::Error mkdir(const std::string &dirpath);
+  // Return error when the dirpath exists when ignoreIfExisting is false .
+  static llvm::Error mkdir(const std::string &dirpath,bool ignoreIfExisting);
 
   // rm -rf.
   static void rmFile(const std::string &filepath);

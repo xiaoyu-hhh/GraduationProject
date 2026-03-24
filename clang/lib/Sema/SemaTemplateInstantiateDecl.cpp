@@ -6342,33 +6342,48 @@ void Sema::PerformPendingInstantiations(bool LocalOnly) {
                                             DefinitionRequired, true);
 
               // FSClang begin
-              auto &global = fsclang::Global::getInstance();
-              if (global.Mode == fsclang::FSClangMode::Master) {
-                if (CurFD->isDefined()) {
-                  auto &astGlobal = fsclang::ASTGlobal::getInstance();
-                  std::string MangledName = astGlobal.getMangledName(CurFD);
-                  global.addMangledName(
-                      MangledName, fsclang::MangledNameParts::Instantiation);
-                }
-              }
+              // auto &global = fsclang::Global::getInstance();
+              // if (global.Mode == fsclang::FSClangMode::Master) {
+              //   if (CurFD->isDefined()) {
+              //     auto &astGlobal = fsclang::ASTGlobal::getInstance();
+              //     std::string MangledName = astGlobal.getMangledName(CurFD);
+              //     global.addMangledName(
+              //         MangledName, fsclang::MangledNameParts::Instantiation);
+              //   }
+              // }
               // FSClang end
 
               if (CurFD->isDefined())
                 CurFD->setInstantiationIsPending(false);
             });
       } else {
-        InstantiateFunctionDefinition(/*FIXME:*/ Inst.second, Function, true,
-                                      DefinitionRequired, true);
-
         // FSClang begin
         auto &global = fsclang::Global::getInstance();
-        if (global.Mode == fsclang::FSClangMode::Master) {
+        if (global.Mode == fsclang::FSClangMode::Client) {
+          auto &astGlobal = fsclang::ASTGlobal::getInstance();
+          const std::string MangledName = astGlobal.getMangledName(Function);
+          if (!global.clientCanSkip(MangledName) ||
+              !astGlobal.isValidFuncHeader(Function)) {
+            InstantiateFunctionDefinition(/*FIXME:*/ Inst.second, Function,
+                                          true, DefinitionRequired, true);
+          }
+          // Client Skip
+          // Nothing to do
+        }
+        else if (global.Mode == fsclang::FSClangMode::Master) {
+          InstantiateFunctionDefinition(/*FIXME:*/ Inst.second, Function, true,
+                                      DefinitionRequired, true);
           if (Function->isDefined()) {
             auto &astGlobal = fsclang::ASTGlobal::getInstance();
             std::string MangledName = astGlobal.getMangledName(Function);
-            global.addMangledName(
-                MangledName, fsclang::MangledNameParts::Instantiation);
+            if (astGlobal.isValidFuncHeader(Function))
+              global.addMangledName(MangledName, fsclang::MangledNameParts::Instantiation);
           }
+        }
+        else {
+          // origin
+          InstantiateFunctionDefinition(/*FIXME:*/ Inst.second, Function, true,
+                                      DefinitionRequired, true);
         }
         // FSClang end
 

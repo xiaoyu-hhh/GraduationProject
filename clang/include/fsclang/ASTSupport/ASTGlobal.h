@@ -22,6 +22,9 @@
 #include "clang/AST/Mangle.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Sema/Sema.h"
+#include "illvm/Support/Interval.h"
+#include "illvm/Support/FileSystem.h"
+#include <fstream>
 
 namespace fsclang {
 
@@ -68,6 +71,10 @@ public:
 
   std::string getMangledName(const clang::NamedDecl *decl) const;
 
+  illvm::SourceInterval getDeclSourceInterval(const clang::Decl *decl) const;
+
+  std::string dumpDecl(const clang::Decl *decl) const;
+
 
   bool isMainFileDecl(const clang::Decl *decl) const {
     const auto loc = decl->getLocation();
@@ -96,51 +103,119 @@ public:
   }
 
   bool isValidFuncHeader(const clang::FunctionDecl *funcDecl) const {
-    if (funcDecl->isImplicit() || !isMainFileDecl(funcDecl) ||
-        funcDecl->getLinkageAndVisibility().getLinkage() ==
-            clang::Linkage::UniqueExternalLinkage ||
-        funcDecl->isTemplated() || funcDecl->isTemplateInstantiation() ||
-        funcDecl->isFunctionTemplateSpecialization() ||
-        llvm::dyn_cast<clang::CXXConstructorDecl>(funcDecl) != nullptr ||
-        llvm::dyn_cast<clang::CXXDestructorDecl>(funcDecl) != nullptr ||
-        funcDecl->getOverloadedOperator() !=
-            clang::OverloadedOperatorKind::OO_None ||
-        llvm::dyn_cast<clang::CXXConversionDecl>(funcDecl) != nullptr ||
-        funcDecl->isConstexpr() ||
-        hasAutoReturn(funcDecl) ||
-        funcDecl->hasAttr<clang::AlwaysInlineAttr>() ||
-        funcDecl->hasAttr<clang::ConstructorAttr>() ||
-        funcDecl->hasAttr<clang::DestructorAttr>()) {
+
+    if (llvm::dyn_cast<clang::CXXConstructorDecl>(funcDecl) != nullptr ||
+        llvm::dyn_cast<clang::CXXDestructorDecl>(funcDecl) != nullptr)
       return false;
-    }
+
     if (const clang::CXXMethodDecl *cxxMethodDecl =
             llvm::dyn_cast<const clang::CXXMethodDecl>(funcDecl)) {
       if (cxxMethodDecl->isVirtual()) {
         return false;
       }
-      if (!cxxMethodDecl->isOutOfLine()) {
-        return false;
-      }
     }
-    if (getMangledName(funcDecl).empty()) {
+
+    if (funcDecl->isImplicit())
       return false;
-    }
+
+    if (funcDecl->getLinkageAndVisibility().getLinkage() ==
+        clang::Linkage::UniqueExternalLinkage)
+      return false;
+
+    if (funcDecl->isTemplated() || funcDecl->isTemplateInstantiation() ||
+        funcDecl->isFunctionTemplateSpecialization())
+      return false;
+
+    if (funcDecl->isConstexpr() || hasAutoReturn(funcDecl))
+      return false;
+
+    if (funcDecl->hasAttr<clang::AlwaysInlineAttr>() ||
+        funcDecl->hasAttr<clang::ConstructorAttr>() ||
+        funcDecl->hasAttr<clang::DestructorAttr>())
+      return false;
+
+    // New
+    if (funcDecl->getOverloadedOperator() !=
+      clang::OverloadedOperatorKind::OO_None)
+      return false;
+
+    // deleted / defaulted
+    // if (funcDecl->isDeleted() || funcDecl->isDefaulted())
+    //   return false;
+
+    // // 没有 body
+    // if (!funcDecl->doesThisDeclarationHaveABody())
+    //   return false;
+
+    // internal linkage（anonymous namespace）
+    // if (funcDecl->getLinkageAndVisibility().getLinkage()  == clang::Linkage::InternalLinkage) {
+    //   return false;
+    // }
+
+
+    // // inline（建议保守）
+    // if (funcDecl->isInlined())
+    //   return false;
+
+    // if (funcDecl->getName().str() == "swap") {
+    //   std::string targetPath = "/root/debug.txt";
+    //   std::ofstream ofs(targetPath,std::ios::app);
+    //   ofs << dumpDecl(funcDecl) << "\n";
+    //   ofs.close();
+    //   return false;
+    // }
+
     return true;
   }
 
-  bool isValidFuncBody(const clang::FunctionDecl *funcDecl) const {
-    const auto compoundStmt =
-     llvm::dyn_cast<clang::CompoundStmt>(funcDecl->getBody());
-    if (compoundStmt == nullptr || compoundStmt->getLBracLoc().isInvalid()) {
-      return false;
-    }
-    const auto loc = compoundStmt->getLBracLoc();
-    const char *locChar = dumpOriginalCode(loc);
-    if (locChar == nullptr || *locChar != '{') {
-      return false;
-    }
-    return true;
-  }
+
+  // bool isValidFuncHeader(const clang::FunctionDecl *funcDecl) const {
+  //   if (funcDecl->isImplicit() || !isMainFileDecl(funcDecl) ||
+  //       funcDecl->getLinkageAndVisibility().getLinkage() ==
+  //           clang::Linkage::UniqueExternalLinkage ||
+  //       funcDecl->isTemplated() || funcDecl->isTemplateInstantiation() ||
+  //       funcDecl->isFunctionTemplateSpecialization() ||
+  //       llvm::dyn_cast<clang::CXXConstructorDecl>(funcDecl) != nullptr ||
+  //       llvm::dyn_cast<clang::CXXDestructorDecl>(funcDecl) != nullptr ||
+  //       funcDecl->getOverloadedOperator() !=
+  //           clang::OverloadedOperatorKind::OO_None ||
+  //       llvm::dyn_cast<clang::CXXConversionDecl>(funcDecl) != nullptr ||
+  //       funcDecl->isConstexpr() ||
+  //       hasAutoReturn(funcDecl) ||
+  //       funcDecl->hasAttr<clang::AlwaysInlineAttr>() ||
+  //       funcDecl->hasAttr<clang::ConstructorAttr>() ||
+  //       funcDecl->hasAttr<clang::DestructorAttr>()) {
+  //     return false;
+  //   }
+  //   if (const clang::CXXMethodDecl *cxxMethodDecl =
+  //           llvm::dyn_cast<const clang::CXXMethodDecl>(funcDecl)) {
+  //     if (cxxMethodDecl->isVirtual()) {
+  //       return false;
+  //     }
+  //     if (!cxxMethodDecl->isOutOfLine()) {
+  //       return false;
+  //     }
+  //   }
+  //   if (getMangledName(funcDecl).empty()) {
+  //     return false;
+  //   }
+  //   return true;
+  // }
+
+  // bool isValidFuncBody(const clang::FunctionDecl *funcDecl) const {
+  //   const auto compoundStmt =
+  //    llvm::dyn_cast<clang::CompoundStmt>(funcDecl->getBody());
+  //   if (compoundStmt == nullptr || compoundStmt->getLBracLoc().isInvalid()) {
+  //     return false;
+  //   }
+  //   const auto loc = compoundStmt->getLBracLoc();
+  //   const char *locChar = dumpOriginalCode(loc);
+  //   if (locChar == nullptr || *locChar != '{') {
+  //     return false;
+  //   }
+  //   return true;
+  // }
+
 };
 
 } // namespace fsclang

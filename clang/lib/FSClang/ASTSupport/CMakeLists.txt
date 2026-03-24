@@ -1,7 +1,7 @@
 set(LLVM_LINK_COMPONENTS
   Option
   ProfileData
-  LLVMILLVMSupport
+  ILLVMSupport
   )
 
 add_clang_library(clangFSClangASTSupport

@@ -53,6 +53,11 @@
 #include <optional>
 #include <unordered_map>
 
+// FSClang begin
+#include "fsclang/ASTSupport/ASTGlobal.h"
+#include "fsclang/Global/Global.h"
+// FSClang end
+
 using namespace clang;
 using namespace sema;
 
@@ -14914,6 +14919,23 @@ Sema::ActOnStartOfFunctionDef(Scope *FnBodyScope, Declarator &D,
 
   D.setFunctionDefinitionKind(FunctionDefinitionKind::Definition);
   Decl *DP = HandleDeclarator(ParentScope, D, TemplateParameterLists);
+
+  // FSClang begin
+  auto &global = fsclang::Global::getInstance();
+  if (global.Mode == fsclang::FSClangMode::Client) {
+    auto &astGlobal = fsclang::ASTGlobal::getInstance();
+    if (const auto *ND = llvm::dyn_cast<clang::NamedDecl>(DP)) {
+      const std::string MangledName = astGlobal.getMangledName(ND);
+      if (const auto *FD = llvm::dyn_cast<clang::FunctionDecl>(DP)) {
+        if (astGlobal.isValidFuncHeader(FD) && global.clientCanSkip(MangledName) && BodyKind != Sema::FnBodyKind::Delete) {
+          // Client Skip
+          SkipBody->ShouldSkip = true;
+        }
+      }
+    }
+  }
+  // FSClang end
+
   Decl *Dcl = ActOnStartOfFunctionDef(FnBodyScope, DP, SkipBody, BodyKind);
 
   if (!Bases.empty())

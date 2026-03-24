@@ -35,6 +35,7 @@
 
 // FSClang begin
 #include "fsclang/Global/Global.h"
+#include "illvm/Support/Time.h"
 // FSClang end
 
 using namespace clang;
@@ -432,14 +433,58 @@ int CC1Command::Execute(ArrayRef<std::optional<StringRef>> Redirects,
   auto &global = fsclang::Global::getInstance();
   global.init(getSource().getKind(), getInputInfos(),
                              getOutputFilenames(), Argv);
-  // FSClang end
+  long long startTsMs = 0;
+  long long endTsMs = 0;
 
   int R = 0;
-  // Enter ExecuteCC1Tool() instead of starting up a new process
-  if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
-    llvm::RestorePrettyStackState(PrettyState);
-    return CRC.RetCode;
+
+  if (global.runMode == fsclang::RunMode::Test) {
+    // fsclang::FSClangMode::Master
+    global.Mode = fsclang::FSClangMode::Master;
+    startTsMs = illvm::Time::currentTsMs();
+    if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
+      llvm::RestorePrettyStackState(PrettyState);
+      return CRC.RetCode;
+    }
+    endTsMs = illvm::Time::currentTsMs();
+    global.MasterTimeMs = endTsMs - startTsMs;
+    global.saveAllMangledNames();
+
+    // fsclang::FSClangMode::Normal
+    global.Mode = fsclang::FSClangMode::Normal;
+    startTsMs = illvm::Time::currentTsMs();
+    if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
+      llvm::RestorePrettyStackState(PrettyState);
+      return CRC.RetCode;
+    }
+    endTsMs = illvm::Time::currentTsMs();
+    global.NormalTimeMs = endTsMs - startTsMs;
+
+    // fsclang::FSClangMode::Client
+    global.Mode = fsclang::FSClangMode::Client;
+    startTsMs = illvm::Time::currentTsMs();
+    global.initClientUsed();
+    if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
+      llvm::RestorePrettyStackState(PrettyState);
+      return CRC.RetCode;
+    }
+    endTsMs = illvm::Time::currentTsMs();
+    global.ClientTimeMs = endTsMs - startTsMs;
+
+    global.RunMode_Test_Analysis();
+
   }
+  else {
+    // Origin
+    // Enter ExecuteCC1Tool() instead of starting up a new process
+    if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
+      llvm::RestorePrettyStackState(PrettyState);
+      return CRC.RetCode;
+    }
+  }
+
+  // FSClang end
+
   return R;
 }
 

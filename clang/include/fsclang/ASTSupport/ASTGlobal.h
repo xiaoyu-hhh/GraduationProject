@@ -139,6 +139,14 @@ public:
       clang::OverloadedOperatorKind::OO_None)
       return false;
 
+    const auto &SM = funcDecl->getASTContext().getSourceManager();
+    clang::SourceLocation loc = funcDecl->getLocation();
+
+    if (loc.isMacroID()) {
+      // ✅ 这个函数名 / 声明 来自宏展开
+      return false;
+    }
+
     // deleted / defaulted
     // if (funcDecl->isDeleted() || funcDecl->isDefaulted())
     //   return false;

@@ -96,10 +96,10 @@ void Global::saveAllMangledNames() {
 
   initIsUsed();
 
-  saveSet(workPath,"Method.txt",Method);
-  saveSet(workPath,"Function.txt",Function);
-  saveSet(workPath,"Instantiation.txt",Instantiation);
-  saveSet(workPath,"CodeGen.txt",CodeGen);
+  // saveSet(workPath,"Method.txt",Method);
+  // saveSet(workPath,"Function.txt",Function);
+  // saveSet(workPath,"Instantiation.txt",Instantiation);
+  // saveSet(workPath,"CodeGen.txt",CodeGen);
   saveSet(workPath,"isUsed.txt",isUsed);
 
 }

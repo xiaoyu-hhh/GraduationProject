@@ -139,7 +139,7 @@ public:
       clang::OverloadedOperatorKind::OO_None)
       return false;
 
-    const auto &SM = funcDecl->getASTContext().getSourceManager();
+    // const auto &SM = funcDecl->getASTContext().getSourceManager();
     clang::SourceLocation loc = funcDecl->getLocation();
 
     if (loc.isMacroID()) {

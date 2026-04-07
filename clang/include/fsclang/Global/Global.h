@@ -13,6 +13,7 @@ namespace fsclang {
 
 enum class RunMode {
   Test,
+  Client,
   Origin
 };
 

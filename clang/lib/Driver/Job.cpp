@@ -474,7 +474,36 @@ int CC1Command::Execute(ArrayRef<std::optional<StringRef>> Redirects,
     global.RunMode_Test_Analysis();
 
   }
-  else {
+  else if (global.runMode == fsclang::RunMode::Client) {
+    if (global.Mode == fsclang::FSClangMode::Master) {
+      if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
+        llvm::RestorePrettyStackState(PrettyState);
+        return CRC.RetCode;
+      }
+      global.saveAllMangledNames();
+    }
+
+
+    // fsclang::FSClangMode::Normal
+    if (global.Mode == fsclang::FSClangMode::Normal) {
+      if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
+        llvm::RestorePrettyStackState(PrettyState);
+        return CRC.RetCode;
+      }
+    }
+
+
+    // fsclang::FSClangMode::Client
+    if (global.Mode == fsclang::FSClangMode::Client) {
+      global.initClientUsed();
+      if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
+        llvm::RestorePrettyStackState(PrettyState);
+        return CRC.RetCode;
+      }
+    }
+
+  }
+  else{
     // Origin
     // Enter ExecuteCC1Tool() instead of starting up a new process
     if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {

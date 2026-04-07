@@ -37,6 +37,24 @@ void Global::init(const clang::driver::Action::ActionClass &kind,
   if (mode != "") {
     if (mode == "Test")
       runMode = RunMode::Test;
+    else if (mode == "Client") {
+      runMode = RunMode::Client;
+      const char* tmp = std::getenv("ClientMode");
+      std::string ClientMode = tmp ? tmp : "";
+      if (ClientMode != "") {
+        if (ClientMode == "Normal")
+          Mode = FSClangMode::Normal;
+        else if (ClientMode == "Master")
+          Mode = FSClangMode::Master;
+        else if (ClientMode == "Client")
+          Mode = FSClangMode::Client;
+        else
+          Mode = FSClangMode::Origin;
+      }
+      else {
+        Mode = FSClangMode::Origin;
+      }
+    }
     else
       runMode = RunMode::Origin;
   }

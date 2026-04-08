@@ -76,7 +76,28 @@ void Global::init(const clang::driver::Action::ActionClass &kind,
   // llvm::StringRef stem = llvm::sys::path::stem(file);
   // workPath
   // workPath = illvm::FileSystem::linkPath(currentPath,stem.str() + ".Info");
-  workPath = inputPath + ".Info";
+
+  std::string savepath = inputPath;
+  for (int i = 0; i < savepath.length(); i++) {
+    char c = savepath[i];
+    if (c == '/' || c == '\\')
+      savepath[i] = '_';
+  }
+  savepath = savepath + ".Info";
+  const char *env3 = std::getenv("benchmark");
+  std::string benchmark_path = "/root/ibenchmark";
+  if (env3)
+    benchmark_path = env3;
+  workPath = illvm::FileSystem::linkPath(benchmark_path + "/" + project + "/Infos" ,savepath);
+
+  if (auto err = illvm::FileSystem::mkdir(workPath,true)) {
+    Mode = FSClangMode::Origin;
+    runMode = RunMode::Origin;
+    return;
+  }
+  // workPath = inputPath + ".Info";
+
+
 }
 static void saveSet(const std::string &dirPath,const std::string &toWriteFileName,
   const std::unordered_set<std::string> &Set) {

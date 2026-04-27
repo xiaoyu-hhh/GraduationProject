@@ -6363,7 +6363,7 @@ void Sema::PerformPendingInstantiations(bool LocalOnly) {
           auto &astGlobal = fsclang::ASTGlobal::getInstance();
           const std::string MangledName = astGlobal.getMangledName(Function);
           if (!global.clientCanSkip(MangledName) ||
-              !astGlobal.isValidFuncHeader(Function)) {
+              !astGlobal.isValidTempFuncHeader(Function)) {
             InstantiateFunctionDefinition(/*FIXME:*/ Inst.second, Function,
                                           true, DefinitionRequired, true);
           }
@@ -6376,7 +6376,7 @@ void Sema::PerformPendingInstantiations(bool LocalOnly) {
           if (Function->isDefined()) {
             auto &astGlobal = fsclang::ASTGlobal::getInstance();
             std::string MangledName = astGlobal.getMangledName(Function);
-            if (astGlobal.isValidFuncHeader(Function))
+            if (astGlobal.isValidTempFuncHeader(Function))
               global.addMangledName(MangledName, fsclang::MangledNameParts::Instantiation);
           }
         }

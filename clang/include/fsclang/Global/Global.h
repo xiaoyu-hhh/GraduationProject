@@ -60,11 +60,11 @@ public:
   // MangledNames that are truly CodeGened
   std::unordered_set<std::string> CodeGen;
   // CodeGen find in ( Method + Function + Instantiation ) = isUsed
-  std::unordered_set<std::string> isUsed;
-
+  std::unordered_set<std::string> Used;
+  size_t Used_txt_size = 0;
 
   // Client Mode to skip
-  std::unordered_set<std::string> ClientisUsed;
+  std::unordered_set<std::string> ClientUsed;
 
   Global() {}
   Global(const Global &) = delete;
@@ -91,16 +91,20 @@ public:
 
   void saveAllMangledNames();
 
-  void initIsUsed();
+  void initUsed();
 
-  void initClientUsed();
+  void saveUsedFuncs();
+
+  bool loadUsedFuncs();
+
+  // bool initClientUsed();
 
   bool clientCanSkip(const std::string &MangledName) {
     if (MangledName == "") return false;
-    return ClientisUsed.find(MangledName) == ClientisUsed.end();
+    return ClientUsed.find(MangledName) == ClientUsed.end();
   }
 
-  void serialize();
+  // void serialize();
 
   void RunMode_Test_Analysis();
   //

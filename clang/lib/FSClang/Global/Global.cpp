@@ -6,18 +6,21 @@
 #include "llvm/Support/JSON.h"
 #include "llvm/Support/Path.h"
 #include <fstream>
+#include <sstream>
 #include "illvm/Support/Diagnostics.h"
 
 namespace fsclang {
-void Global::initClientUsed() {
-  std::vector<std::string> readInfos;
-  std::string toReadFile = illvm::FileSystem::linkPath(workPath,"isUsed.txt");
-  readInfos = illvm::FileSystem::readLines(toReadFile);
-  for (const auto &info : readInfos) {
-    if (info != "" && info != "\n")
-      ClientisUsed.insert(info);
-  }
-}
+// bool Global::initClientUsed() {
+//   std::vector<std::string> readInfos;
+//   std::string toReadFile = illvm::FileSystem::linkPath(workPath,"Used.txt");
+//   readInfos = illvm::FileSystem::readLines(toReadFile);
+//   if (readInfos.empty()) return false;
+//   for (const auto &info : readInfos) {
+//     if (info != "" && info != "\n")
+//       ClientisUsed.insert(info);
+//   }
+//   return true;
+// }
 
 static bool assembleJobCheck(const clang::driver::Action::ActionClass &kind) {
   return kind == clang::driver::Action::AssembleJobClass;
@@ -77,32 +80,95 @@ void Global::init(const clang::driver::Action::ActionClass &kind,
   // workPath
   // workPath = illvm::FileSystem::linkPath(currentPath,stem.str() + ".Info");
 
-  std::string savepath = inputPath;
-  for (int i = 0; i < savepath.length(); i++) {
-    char c = savepath[i];
-    if (c == '/' || c == '\\')
-      savepath[i] = '_';
-  }
-  savepath = savepath + ".Info";
-  const char *env3 = std::getenv("benchmark");
-  std::string benchmark_path = "/root/ibenchmark";
-  if (env3)
-    benchmark_path = env3;
-  workPath = illvm::FileSystem::linkPath(benchmark_path + "/" + project + "/Infos" ,savepath);
+  // std::string savepath = inputPath;
+  // for (int i = 0; i < savepath.length(); i++) {
+  //   char c = savepath[i];
+  //   if (c == '/' || c == '\\')
+  //     savepath[i] = '_';
+  // }
+  // savepath = savepath + ".Info";
+  // const char *env3 = std::getenv("benchmark");
+  // std::string benchmark_path = "/root/ibenchmark";
+  // if (env3)
+  //   benchmark_path = env3;
+  // workPath = illvm::FileSystem::linkPath(benchmark_path + "/" + project + "/Infos" ,savepath);
+  //
+  // if (runMode == RunMode::Client && Mode == FSClangMode::Master)
+  // if (auto err = illvm::FileSystem::mkdir(workPath,true)) {
+  //   Mode = FSClangMode::Origin;
+  //   runMode = RunMode::Origin;
+  //   return;
+  // }
+  //
+  // if (runMode == RunMode::Client && Mode == FSClangMode::Client) {
+  //   if (!llvm::sys::fs::exists(illvm::FileSystem::linkPath(workPath,"Used.txt"))) {
+  //     Mode = FSClangMode::Origin;
+  //     runMode = RunMode::Origin;
+  //     return;
+  //   }
+  // }
 
-  if (auto err = illvm::FileSystem::mkdir(workPath,true)) {
-    Mode = FSClangMode::Origin;
-    runMode = RunMode::Origin;
-    return;
-  }
-  // workPath = inputPath + ".Info";
-
+  workPath = inputPath + ".Info";
 
 }
-static void saveSet(const std::string &dirPath,const std::string &toWriteFileName,
-  const std::unordered_set<std::string> &Set) {
-  std::string path = illvm::FileSystem::linkPath(dirPath,toWriteFileName);
-  illvm::FileSystem::saveSet(path,Set,true);
+// static void saveSet(const std::string &dirPath,const std::string &toWriteFileName,
+//   const std::unordered_set<std::string> &Set) {
+//   std::string path = illvm::FileSystem::linkPath(dirPath,toWriteFileName);
+//   illvm::FileSystem::saveSet(path,Set,true);
+// }
+
+static size_t commonPrefixLength(const std::string& a, const std::string& b) {
+  size_t i = 0;
+  size_t minLength = std::min(a.size(), b.size());
+  while (i < minLength && a[i] == b[i]) {
+    ++i;
+  }
+  return i;
+}
+
+void Global::saveUsedFuncs() {
+  std::set<std::string> orderedRes(Used.begin(), Used.end());
+
+  std::ostringstream oss;
+  oss << orderedRes.size() << "\n";
+  std::string preStr;
+  for (const auto &elem : orderedRes) {
+    size_t prefixLength = commonPrefixLength(preStr, elem);
+    oss << prefixLength << " ";
+    for (size_t i = prefixLength; i < elem.length(); i++) {
+      oss << elem[i];
+    }
+    oss << "\n";
+    preStr = elem;
+  }
+
+  std::string path = illvm::FileSystem::linkPath(workPath,"Used.txt");
+  std::ofstream ofs(path);
+  if (!ofs.is_open()) {
+    llvm::errs() << "cant open " << path << "\n";
+    return;
+  }
+  std::string content = oss.str();
+  Used_txt_size = content.size();
+  ofs << content;
+  ofs.close();
+}
+
+bool Global::loadUsedFuncs() {
+  std::string path = illvm::FileSystem::linkPath(workPath,"Used.txt");
+  std::istringstream iss(illvm::FileSystem::readAll(path));
+
+  size_t n, prefixLength;
+  iss >> n;
+  std::string suffix, preStr, curStr;
+  for (size_t i = 0; i < n; i++) {
+    iss >> prefixLength >> suffix;
+    curStr = preStr.substr(0, prefixLength);
+    curStr += suffix;
+    ClientUsed.insert(curStr);
+    preStr = curStr;
+  }
+  return true;
 }
 
 void Global::saveAllMangledNames() {
@@ -115,17 +181,20 @@ void Global::saveAllMangledNames() {
     return;
   }
 
-  initIsUsed();
+  initUsed();
 
   // saveSet(workPath,"Method.txt",Method);
   // saveSet(workPath,"Function.txt",Function);
   // saveSet(workPath,"Instantiation.txt",Instantiation);
   // saveSet(workPath,"CodeGen.txt",CodeGen);
-  saveSet(workPath,"isUsed.txt",isUsed);
+  // saveSet(workPath,"Used.txt",isUsed);
+  saveUsedFuncs();
 
 }
 
-void Global::initIsUsed() {
+
+
+void Global::initUsed() {
   // Method + Function + Instantiation
   std::unordered_set<std::string> all;
   all.insert(Method.begin(),Method.end());
@@ -135,7 +204,7 @@ void Global::initIsUsed() {
   for (const auto &N : CodeGen) {
     if (all.find(N) != all.end()) {
       // is used
-      isUsed.insert(N);
+      Used.insert(N);
     }
   }
 }
@@ -187,6 +256,7 @@ void Global::RunMode_Test_Analysis() {
   root["ClientTimeMs"] = ClientTimeMs;
   root["NormalTimeMs"] = NormalTimeMs;
   root["SkipTimeMs"] = NormalTimeMs - ClientTimeMs;
+  root["Used_txt_size"] = Used_txt_size;
 
   root["inputFilePath"] = inputPath;
   root["OutputFilePath"] = outputPath;

@@ -463,7 +463,7 @@ int CC1Command::Execute(ArrayRef<std::optional<StringRef>> Redirects,
     // fsclang::FSClangMode::Client
     global.Mode = fsclang::FSClangMode::Client;
     startTsMs = illvm::Time::currentTsMs();
-    global.initClientUsed();
+    global.loadUsedFuncs();
     if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
       llvm::RestorePrettyStackState(PrettyState);
       return CRC.RetCode;
@@ -492,7 +492,9 @@ int CC1Command::Execute(ArrayRef<std::optional<StringRef>> Redirects,
     }
     // fsclang::FSClangMode::Client
     else if (global.Mode == fsclang::FSClangMode::Client) {
-      global.initClientUsed();
+      bool init_success = global.loadUsedFuncs();
+      if (!init_success)
+        global.Mode = fsclang::FSClangMode::Origin;
       if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
         llvm::RestorePrettyStackState(PrettyState);
         return CRC.RetCode;

@@ -139,13 +139,12 @@ public:
       clang::OverloadedOperatorKind::OO_None)
       return false;
 
-    // const auto &SM = funcDecl->getASTContext().getSourceManager();
-    clang::SourceLocation loc = funcDecl->getLocation();
-
-    if (loc.isMacroID()) {
-      // ✅ 这个函数名 / 声明 来自宏展开
-      return false;
-    }
+    // opencv
+    // clang::SourceLocation loc = funcDecl->getLocation();
+    // if (loc.isMacroID()) {
+    //   // ✅ 这个函数名 / 声明 来自宏展开
+    //   return false;
+    // }
 
     // deleted / defaulted
     // if (funcDecl->isDeleted() || funcDecl->isDefaulted())
@@ -175,6 +174,80 @@ public:
 
     return true;
   }
+
+
+  bool isValidTempFuncHeader(const clang::FunctionDecl *funcDecl) const {
+
+    if (llvm::dyn_cast<clang::CXXConstructorDecl>(funcDecl) != nullptr ||
+        llvm::dyn_cast<clang::CXXDestructorDecl>(funcDecl) != nullptr)
+      return false;
+
+    if (const clang::CXXMethodDecl *cxxMethodDecl =
+            llvm::dyn_cast<const clang::CXXMethodDecl>(funcDecl)) {
+      if (cxxMethodDecl->isVirtual()) {
+        return false;
+      }
+    }
+
+    if (funcDecl->isImplicit())
+      return false;
+
+    if (funcDecl->getLinkageAndVisibility().getLinkage() ==
+        clang::Linkage::UniqueExternalLinkage)
+      return false;
+
+    if (funcDecl->isTemplated() ||
+        funcDecl->isFunctionTemplateSpecialization())
+      return false;
+
+    if (funcDecl->isConstexpr() || hasAutoReturn(funcDecl))
+      return false;
+
+    if (funcDecl->hasAttr<clang::AlwaysInlineAttr>() ||
+        funcDecl->hasAttr<clang::ConstructorAttr>() ||
+        funcDecl->hasAttr<clang::DestructorAttr>())
+      return false;
+
+    // New
+    if (funcDecl->getOverloadedOperator() !=
+      clang::OverloadedOperatorKind::OO_None)
+      return false;
+
+    // opencv
+    // clang::SourceLocation loc = funcDecl->getLocation();
+    // if (loc.isMacroID()) {
+    //   return false;
+    // }
+
+    // deleted / defaulted
+    // if (funcDecl->isDeleted() || funcDecl->isDefaulted())
+    //   return false;
+
+    // // 没有 body
+    // if (!funcDecl->doesThisDeclarationHaveABody())
+    //   return false;
+
+    // internal linkage（anonymous namespace）
+    // if (funcDecl->getLinkageAndVisibility().getLinkage()  == clang::Linkage::InternalLinkage) {
+    //   return false;
+    // }
+
+
+    // // inline（建议保守）
+    // if (funcDecl->isInlined())
+    //   return false;
+
+    // if (funcDecl->getName().str() == "swap") {
+    //   std::string targetPath = "/root/debug.txt";
+    //   std::ofstream ofs(targetPath,std::ios::app);
+    //   ofs << dumpDecl(funcDecl) << "\n";
+    //   ofs.close();
+    //   return false;
+    // }
+
+    return true;
+  }
+
 
 
   // bool isValidFuncHeader(const clang::FunctionDecl *funcDecl) const {

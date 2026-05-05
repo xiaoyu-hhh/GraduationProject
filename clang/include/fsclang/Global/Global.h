@@ -38,6 +38,8 @@ public:
   long long NormalTimeMs = 0;
   long long MasterTimeMs = 0;
   long long ClientTimeMs = 0;
+  long long ASTGenTimeStartMs = 0;
+  long long ASTGenTimeEndMs = 0;
 
   RunMode runMode = RunMode::Origin;
 
@@ -53,6 +55,8 @@ public:
   std::string currentPath = "";
   std::string workPath = "";
 
+  std::unordered_set<std::string> all_func;
+
   // MangledNames of three parts
   std::unordered_set<std::string> Method;
   std::unordered_set<std::string> Function;
@@ -62,6 +66,9 @@ public:
   // CodeGen find in ( Method + Function + Instantiation ) = isUsed
   std::unordered_set<std::string> Used;
   size_t Used_txt_size = 0;
+
+  int used_func_count = 0;
+  int ast_func_count = 0;
 
   // Client Mode to skip
   std::unordered_set<std::string> ClientUsed;
@@ -85,7 +92,7 @@ public:
       if (Part == MangledNameParts::Method) { Method.insert(MangledName); }
       else if (Part == MangledNameParts::Function) { Function.insert(MangledName); }
       else if (Part == MangledNameParts::Instantiation) { Instantiation.insert(MangledName); }
-      else if (Part == MangledNameParts::CodeGen) { CodeGen.insert(MangledName); }
+      else if (Part == MangledNameParts::CodeGen) { CodeGen.insert(MangledName);  }
     }
   }
 

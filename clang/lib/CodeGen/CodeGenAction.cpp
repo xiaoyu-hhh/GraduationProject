@@ -54,6 +54,7 @@
 // FSClang begin
 #include "fsclang/ASTSupport/ASTGlobal.h"
 #include "fsclang/Global/Global.h"
+#include "illvm/Support/Time.h"
 // FSClang end
 
 using namespace clang;
@@ -301,7 +302,12 @@ namespace clang {
     }
 
     void HandleTranslationUnit(ASTContext &C) override {
+
+      auto &global = fsclang::Global::getInstance();
+      global.ASTGenTimeEndMs = illvm::Time::currentTsMs();
+
       {
+
         llvm::TimeTraceScope TimeScope("Frontend");
         PrettyStackTraceString CrashInfo("Per-file LLVM IR generation");
         if (TimerIsEnabled) {
@@ -327,7 +333,6 @@ namespace clang {
 
       // FSClang begin
       for (auto &F : getModule()->functions()) {
-        auto &global = fsclang::Global::getInstance();
         if (global.Mode == fsclang::FSClangMode::Master) {
           global.addMangledName(F.getName().str(),
                                 fsclang::MangledNameParts::CodeGen);

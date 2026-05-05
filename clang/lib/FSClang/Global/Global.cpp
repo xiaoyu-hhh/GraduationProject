@@ -72,6 +72,9 @@ void Global::init(const clang::driver::Action::ActionClass &kind,
   outputFile = outputFilenames[0];
   outputPath = illvm::FileSystem::linkPath(currentPath,outputFilenames[0]);
 
+  ast_func_count = 0;
+  used_func_count = 0;
+
   const char *env2 = std::getenv("Project");
   project = env2 ? env2 : "";
 
@@ -201,12 +204,16 @@ void Global::initUsed() {
   all.insert(Function.begin(),Function.end());
   all.insert(Instantiation.begin(),Instantiation.end());
 
+  ast_func_count = all.size();
+
   for (const auto &N : CodeGen) {
     if (all.find(N) != all.end()) {
       // is used
       Used.insert(N);
     }
   }
+
+  used_func_count = Used.size();
 }
 //
 // void Global::serialize() {
@@ -256,10 +263,14 @@ void Global::RunMode_Test_Analysis() {
   root["ClientTimeMs"] = ClientTimeMs;
   root["NormalTimeMs"] = NormalTimeMs;
   root["SkipTimeMs"] = NormalTimeMs - ClientTimeMs;
+  root["ASTGenTimeMs"] = ASTGenTimeEndMs - ASTGenTimeStartMs;
   root["Used_txt_size"] = Used_txt_size;
 
   root["inputFilePath"] = inputPath;
   root["OutputFilePath"] = outputPath;
+
+  root["unused_func_count"] = ast_func_count - used_func_count;
+  root["all_func"] = all_func.size();
 
   const auto rootValue = llvm::json::Value(std::move(root));
   const auto content = llvm::formatv("{0:2}", rootValue).str();

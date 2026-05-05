@@ -28,6 +28,8 @@
 
 // FSClang begin
 #include "fsclang/ASTSupport/ASTGlobal.h"
+#include "fsclang/Global/Global.h"
+#include "illvm/Support/Time.h"
 // FSClang end
 
 using namespace clang;
@@ -120,6 +122,11 @@ void clang::ParseAST(Sema &S, bool PrintStats, bool SkipFunctionBodies) {
   // FSClang begin
   auto &astGlobal = fsclang::ASTGlobal::getInstance();
   astGlobal.init(&S);
+  auto &global = fsclang::Global::getInstance();
+  global.ASTGenTimeStartMs = illvm::Time::currentTsMs();
+  // long long startTsMs = 0;
+  // long long endTsMs = 0;
+  // startTsMs = illvm::Time::currentTsMs();
   // FSClang end
 
   // Collect global stats on Decls/Stmts (until we have a module streamer).
@@ -221,4 +228,9 @@ void clang::ParseAST(Sema &S, bool PrintStats, bool SkipFunctionBodies) {
     Stmt::PrintStats();
     Consumer->PrintStats();
   }
+
+  // FSClang begin
+  // endTsMs = illvm::Time::currentTsMs();
+  // global.ASTGenTimeMs += endTsMs - startTsMs;
+  // FSClang end
 }

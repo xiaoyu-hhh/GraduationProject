@@ -550,6 +550,7 @@ void Parser::ParseLexedMethodDef(LexedMethod &LM) {
     auto &astGlobal = fsclang::ASTGlobal::getInstance();
     if (const auto *ND = llvm::dyn_cast<clang::NamedDecl>(LM.D)) {
       const std::string MangledName = astGlobal.getMangledName(ND);
+      global.all_func.insert(MangledName);
       if (const auto *FD = llvm::dyn_cast<clang::FunctionDecl>(LM.D)) {
         if (astGlobal.isValidFuncHeader(FD))
           global.addMangledName(MangledName,fsclang::MangledNameParts::Method);

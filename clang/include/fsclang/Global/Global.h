@@ -57,15 +57,17 @@ public:
   std::string workPath = "";
 
   std::unordered_set<std::string> all_func;
+  std::unordered_set<std::string> all_head;
+  std::unordered_set<std::string> all_instant;
 
   // MangledNames of three parts
   std::unordered_set<std::string> Method;
   std::unordered_set<std::string> Function;
-  int HeadFuncCount = 0;
-  int HeadCanSkipCount = 0;
+  int used_head = 0;
+  int ast_head = 0;
   std::unordered_set<std::string> Instantiation;
-  int InstantiationCount = 0;
-  int InstantiationCanSkipCount = 0;
+  int used_instant = 0;
+  int ast_instant = 0;
   // MangledNames that are truly CodeGened
   std::unordered_set<std::string> CodeGen;
   // CodeGen find in ( Method + Function + Instantiation ) = isUsed

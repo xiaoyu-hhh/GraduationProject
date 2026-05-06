@@ -1412,6 +1412,7 @@ Decl *Parser::ParseFunctionDefinition(ParsingDeclarator &D,
     if (const auto *ND = llvm::dyn_cast<clang::NamedDecl>(Res)) {
       const std::string MangledName = astGlobal.getMangledName(ND);
       global.all_func.insert(MangledName);
+      global.all_head.insert(MangledName);
       if (const auto *FD = llvm::dyn_cast<clang::FunctionDecl>(Res)) {
         if (astGlobal.isValidFuncHeader(FD))
           global.addMangledName(MangledName, fsclang::MangledNameParts::Function);

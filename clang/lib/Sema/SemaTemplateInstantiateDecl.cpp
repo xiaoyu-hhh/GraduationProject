@@ -6377,6 +6377,7 @@ void Sema::PerformPendingInstantiations(bool LocalOnly) {
             auto &astGlobal = fsclang::ASTGlobal::getInstance();
             std::string MangledName = astGlobal.getMangledName(Function);
             global.all_func.insert(MangledName);
+            global.all_instant.insert(MangledName);
             if (astGlobal.isValidTempFuncHeader(Function))
               global.addMangledName(MangledName, fsclang::MangledNameParts::Instantiation);
           }

@@ -208,13 +208,10 @@ void Global::initUsed() {
   std::unordered_set<std::string> MethodAndFunction;
   MethodAndFunction.insert(Method.begin(),Method.end());
   MethodAndFunction.insert(Function.begin(),Function.end());
-  HeadFuncCount = MethodAndFunction.size();
-  InstantiationCount = Instantiation.size();
-
-  int used_head = 0;
-  int used_instantiation = 0;
 
   ast_func_count = all.size();
+  ast_head = MethodAndFunction.size();
+  ast_instant = Instantiation.size();
 
   for (const auto &N : CodeGen) {
     if (all.find(N) != all.end()) {
@@ -225,11 +222,10 @@ void Global::initUsed() {
       used_head++;
     }
     if (Instantiation.find(N) != Instantiation.end()) {
-      used_instantiation++;
+      used_instant++;
     }
   }
-  HeadCanSkipCount = HeadFuncCount - used_head;
-  InstantiationCanSkipCount = InstantiationCount - used_instantiation;
+
   used_func_count = Used.size();
 }
 //
@@ -288,13 +284,15 @@ void Global::RunMode_Test_Analysis() {
   root["inputFilePath"] = inputPath;
   root["OutputFilePath"] = outputPath;
 
+  root["ast_func_count"] = ast_func_count;
+  root["used_func_count"] = used_func_count;
   root["unused_func_count"] = ast_func_count - used_func_count;
   root["all_func"] = all_func.size();
 
-  root["HeadFuncCount"] = HeadFuncCount;
-  root["HeadCanSkipCount"] = HeadCanSkipCount;
-  root["InstantiationCount"] = InstantiationCount;
-  root["InstantiationCanSkipCount"] = InstantiationCanSkipCount;
+  root["HeadFuncCount"] = all_head.size();
+  root["HeadCanSkipCount"] = ast_head - used_head;
+  root["InstantiationCount"] = all_instant.size();
+  root["InstantiationCanSkipCount"] = ast_instant - used_instant;
 
   const auto rootValue = llvm::json::Value(std::move(root));
   const auto content = llvm::formatv("{0:2}", rootValue).str();

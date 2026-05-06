@@ -40,6 +40,7 @@ public:
   long long ClientTimeMs = 0;
   long long ASTGenTimeStartMs = 0;
   long long ASTGenTimeEndMs = 0;
+  long long endTimeMs = 0;
 
   RunMode runMode = RunMode::Origin;
 
@@ -60,12 +61,17 @@ public:
   // MangledNames of three parts
   std::unordered_set<std::string> Method;
   std::unordered_set<std::string> Function;
+  int HeadFuncCount = 0;
+  int HeadCanSkipCount = 0;
   std::unordered_set<std::string> Instantiation;
+  int InstantiationCount = 0;
+  int InstantiationCanSkipCount = 0;
   // MangledNames that are truly CodeGened
   std::unordered_set<std::string> CodeGen;
   // CodeGen find in ( Method + Function + Instantiation ) = isUsed
   std::unordered_set<std::string> Used;
   size_t Used_txt_size = 0;
+  size_t original_size = 0;
 
   int used_func_count = 0;
   int ast_func_count = 0;

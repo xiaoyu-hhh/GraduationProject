@@ -136,6 +136,7 @@ void Global::saveUsedFuncs() {
   oss << orderedRes.size() << "\n";
   std::string preStr;
   for (const auto &elem : orderedRes) {
+    original_size += elem.size();
     size_t prefixLength = commonPrefixLength(preStr, elem);
     oss << prefixLength << " ";
     for (size_t i = prefixLength; i < elem.length(); i++) {
@@ -204,6 +205,15 @@ void Global::initUsed() {
   all.insert(Function.begin(),Function.end());
   all.insert(Instantiation.begin(),Instantiation.end());
 
+  std::unordered_set<std::string> MethodAndFunction;
+  MethodAndFunction.insert(Method.begin(),Method.end());
+  MethodAndFunction.insert(Function.begin(),Function.end());
+  HeadFuncCount = MethodAndFunction.size();
+  InstantiationCount = Instantiation.size();
+
+  int used_head = 0;
+  int used_instantiation = 0;
+
   ast_func_count = all.size();
 
   for (const auto &N : CodeGen) {
@@ -211,8 +221,15 @@ void Global::initUsed() {
       // is used
       Used.insert(N);
     }
+    if (MethodAndFunction.find(N) != MethodAndFunction.end()) {
+      used_head++;
+    }
+    if (Instantiation.find(N) != Instantiation.end()) {
+      used_instantiation++;
+    }
   }
-
+  HeadCanSkipCount = HeadFuncCount - used_head;
+  InstantiationCanSkipCount = InstantiationCount - used_instantiation;
   used_func_count = Used.size();
 }
 //
@@ -264,6 +281,8 @@ void Global::RunMode_Test_Analysis() {
   root["NormalTimeMs"] = NormalTimeMs;
   root["SkipTimeMs"] = NormalTimeMs - ClientTimeMs;
   root["ASTGenTimeMs"] = ASTGenTimeEndMs - ASTGenTimeStartMs;
+  root["backendTimeMS"] = endTimeMs - ASTGenTimeEndMs;
+  root["original_size"] = original_size;
   root["Used_txt_size"] = Used_txt_size;
 
   root["inputFilePath"] = inputPath;
@@ -271,6 +290,11 @@ void Global::RunMode_Test_Analysis() {
 
   root["unused_func_count"] = ast_func_count - used_func_count;
   root["all_func"] = all_func.size();
+
+  root["HeadFuncCount"] = HeadFuncCount;
+  root["HeadCanSkipCount"] = HeadCanSkipCount;
+  root["InstantiationCount"] = InstantiationCount;
+  root["InstantiationCanSkipCount"] = InstantiationCanSkipCount;
 
   const auto rootValue = llvm::json::Value(std::move(root));
   const auto content = llvm::formatv("{0:2}", rootValue).str();

@@ -459,6 +459,7 @@ int CC1Command::Execute(ArrayRef<std::optional<StringRef>> Redirects,
       return CRC.RetCode;
     }
     endTsMs = illvm::Time::currentTsMs();
+    global.endTimeMs = endTsMs;
     global.NormalTimeMs = endTsMs - startTsMs;
 
     // // fsclang::FSClangMode::Client

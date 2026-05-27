@@ -452,26 +452,26 @@ int CC1Command::Execute(ArrayRef<std::optional<StringRef>> Redirects,
 
 
     // fsclang::FSClangMode::Normal
-    // global.Mode = fsclang::FSClangMode::Normal;
-    // startTsMs = illvm::Time::currentTsMs();
-    // if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
-    //   llvm::RestorePrettyStackState(PrettyState);
-    //   return CRC.RetCode;
-    // }
-    // endTsMs = illvm::Time::currentTsMs();
-    // global.endTimeMs = endTsMs;
-    // global.NormalTimeMs = endTsMs - startTsMs;
+    global.Mode = fsclang::FSClangMode::Normal;
+    startTsMs = illvm::Time::currentTsMs();
+    if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
+      llvm::RestorePrettyStackState(PrettyState);
+      return CRC.RetCode;
+    }
+    endTsMs = illvm::Time::currentTsMs();
+    global.endTimeMs = endTsMs;
+    global.NormalTimeMs = endTsMs - startTsMs;
 
-    // // fsclang::FSClangMode::Client
-    // global.Mode = fsclang::FSClangMode::Client;
-    // startTsMs = illvm::Time::currentTsMs();
-    // global.loadUsedFuncs();
-    // if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
-    //   llvm::RestorePrettyStackState(PrettyState);
-    //   return CRC.RetCode;
-    // }
-    // endTsMs = illvm::Time::currentTsMs();
-    // global.ClientTimeMs = endTsMs - startTsMs;
+    // fsclang::FSClangMode::Client
+    global.Mode = fsclang::FSClangMode::Client;
+    startTsMs = illvm::Time::currentTsMs();
+    global.loadUsedFuncs();
+    if (!CRC.RunSafely([&]() { R = D.CC1Main(Argv); })) {
+      llvm::RestorePrettyStackState(PrettyState);
+      return CRC.RetCode;
+    }
+    endTsMs = illvm::Time::currentTsMs();
+    global.ClientTimeMs = endTsMs - startTsMs;
 
     global.RunMode_Test_Analysis();
 

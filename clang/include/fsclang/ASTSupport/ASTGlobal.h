@@ -176,7 +176,7 @@ public:
   }
 
 
-  bool isValidTempFuncHeader(const clang::FunctionDecl *funcDecl) const {
+  bool isValidTempInstantiation(const clang::FunctionDecl *funcDecl) const {
 
     if (llvm::dyn_cast<clang::CXXConstructorDecl>(funcDecl) != nullptr ||
         llvm::dyn_cast<clang::CXXDestructorDecl>(funcDecl) != nullptr)

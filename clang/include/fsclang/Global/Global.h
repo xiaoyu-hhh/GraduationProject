@@ -33,6 +33,13 @@ enum class MangledNameParts {
   CodeGen
 };
 
+enum class PassMode {
+  Normal, // Origin
+  Master, // Collection
+  Client, // Skip
+};
+
+
 class Global {
 public:
   long long NormalTimeMs = 0;
